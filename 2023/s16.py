@@ -34,76 +34,99 @@ def next_pos(pos, rows, cols):
     return [rn, cn, dir, valid]
 
 
-rays = [[[0,0,RIGHT,True]]]
-seen = set()
-seen.add((0,0,RIGHT))
-k = 0
-while True:
-    k += 1
-    changed = False
-    
-    new_rays = []
-    for i, ray in enumerate(rays): # action mirrors
-        pos = ray[-1]
-        r, c = pos[0], pos[1]
-        x = mp[r][c]
-        if not pos[3] or x == '.':
-            continue
-        if pos[2] == RIGHT and x == '/':
-            rays[i][-1][2] = UP
-        elif pos[2] == RIGHT and x == '*':
-            rays[i][-1][2] = DOWN
-        elif pos[2] == LEFT and x == '/':
-            rays[i][-1][2] = DOWN
-        elif pos[2] == LEFT and x == '*':
-            rays[i][-1][2] = UP
-        elif pos[2] == UP and x == '/':
-            rays[i][-1][2] = RIGHT
-        elif pos[2] == UP and x == '*':
-            rays[i][-1][2] = LEFT
-        elif pos[2] == DOWN and x == '/':
-            rays[i][-1][2] = LEFT
-        elif pos[2] == DOWN and x == '*':
-            rays[i][-1][2] = RIGHT
-        elif pos[2] in [RIGHT,LEFT] and x == '|':
-            rays[i][-1][2] = UP
-            new_rays.append([[r, c, DOWN, True]])
-        elif pos[2] in [UP,DOWN] and x == '-':
-            rays[i][-1][2] = LEFT
-            new_rays.append([[r, c, RIGHT, True]])
-    
-    if new_rays:
-        rays += new_rays
-        changed = True
+def compute_energy (r0, c0, d0):
+    rays = [[[r0,c0,d0,True]]]
+    seen = set()
+    seen.add((r0,c0,dir))
+    k = 0
+    while True:
+        k += 1
+        changed = False
+        
+        new_rays = []
+        for i, ray in enumerate(rays): # action mirrors
+            pos = ray[-1]
+            r, c = pos[0], pos[1]
+            x = mp[r][c]
+            if not pos[3] or x == '.':
+                continue
+            if pos[2] == RIGHT and x == '/':
+                rays[i][-1][2] = UP
+            elif pos[2] == RIGHT and x == '*':
+                rays[i][-1][2] = DOWN
+            elif pos[2] == LEFT and x == '/':
+                rays[i][-1][2] = DOWN
+            elif pos[2] == LEFT and x == '*':
+                rays[i][-1][2] = UP
+            elif pos[2] == UP and x == '/':
+                rays[i][-1][2] = RIGHT
+            elif pos[2] == UP and x == '*':
+                rays[i][-1][2] = LEFT
+            elif pos[2] == DOWN and x == '/':
+                rays[i][-1][2] = LEFT
+            elif pos[2] == DOWN and x == '*':
+                rays[i][-1][2] = RIGHT
+            elif pos[2] in [RIGHT,LEFT] and x == '|':
+                rays[i][-1][2] = UP
+                new_rays.append([[r, c, DOWN, True]])
+            elif pos[2] in [UP,DOWN] and x == '-':
+                rays[i][-1][2] = LEFT
+                new_rays.append([[r, c, RIGHT, True]])
+        
+        if new_rays:
+            rays += new_rays
+            changed = True
 
-    for i, ray in enumerate(rays): # move each ray one step forward
-        pos = ray[-1]
-        if pos[3]: # only continue valid rays
-            nxt = next_pos(pos, rows, cols)
-            if nxt[-1]: # only continue if next position is valid
-                head = tuple(nxt[:-1])
-                if not head in seen: # don't track if we already passed here
-                    rays[i].append(nxt)
-                    seen.add(head)
-                    changed = True
-            else:
-                rays[i][-1][3] = False
+        for i, ray in enumerate(rays): # move each ray one step forward
+            pos = ray[-1]
+            if pos[3]: # only continue valid rays
+                nxt = next_pos(pos, rows, cols)
+                if nxt[-1]: # only continue if next position is valid
+                    head = tuple(nxt[:-1])
+                    if not head in seen: # don't track if we already passed here
+                        rays[i].append(nxt)
+                        seen.add(head)
+                        changed = True
+                else:
+                    rays[i][-1][3] = False
 
-    if not changed:
-        print(f'exiting at step {k}')
-        break
+        if not changed:
+            break
 
-print(rows, cols)
-for line in data:
-    print(line.strip())
-print()
+    seen = set(map(lambda x:(x[0],x[1]), list(seen)))
 
-seen = set(map(lambda x:(x[0],x[1]), list(seen)))
+    # out = [['.' for _ in range(cols)] for _ in range(rows)]
+    # for s in seen:
+    #     out[s[0]][s[1]] = '#'
+    # for line in [''.join(x) for x in out]:
+    #     print(line)
 
-out = [['.' for _ in range(cols)] for _ in range(rows)]
-for s in seen:
-    out[s[0]][s[1]] = '#'
-for line in [''.join(x) for x in out]:
-    print(line)
+    return (len(seen))
 
-print(len(seen))
+max_s = compute_energy(0, 0, RIGHT)
+
+d0 = UP
+r0 = rows-1
+for c0 in range(cols):
+    s = compute_energy(r0, c0, d0)
+    max_s = max([s, max_s])
+
+d0 = DOWN
+r0 = 0
+for c0 in range(cols):
+    s = compute_energy(r0, c0, d0)
+    max_s = max([s, max_s])
+
+d0 = RIGHT
+c0 = 0
+for r0 in range(rows):
+    s = compute_energy(r0, c0, d0)
+    max_s = max([s, max_s])
+
+d0 = LEFT
+c0 = cols-1
+for r0 in range(rows):
+    s = compute_energy(r0, c0, d0)
+    max_s = max([s, max_s])
+
+print(max_s)
