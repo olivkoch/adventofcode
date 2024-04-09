@@ -43,9 +43,12 @@ def neighbors(pos, rows, cols):
     o3 = (r, c-1, LEFT, x+1 if LEFT == d else 0)
     o4 = (r, c+1, RIGHT, x+1 if RIGHT == d else 0)
     out = [o1, o2, o3, o4]
+    if x < 3:
+        out = filter(lambda x:x[2] == d, out)
     if d:
         out = filter(lambda x:x[2] != opposite_direction(d), out) # no going backward
-    out = filter(lambda x:x[3] < 4, out) # no more than 3 moves in the same direction
+    out = filter(lambda x:x[3] < 11, out) # 
+    #out = filter(lambda x:x[3] >= 4, out) # 
     out = filter(lambda x:x[0] >= 0, out) # stay in the grid
     out = filter(lambda x:x[1] >= 0, out)
     out = filter(lambda x:x[0] < rows, out)
@@ -58,16 +61,16 @@ def find():
     for c in range(cols):
         for r in range(rows):
             for d in range(4):
-                for steps in range(3):
+                for steps in range(10):
                     unvisited[(r,c,d,steps)] = math.inf # r, c, direction, count
 
     dist = {}
     for c in range(cols):
         for r in range(rows):
             for d in range(4):
-                for steps in range(3):
+                for steps in range(10):
                     dist[(r,c,d,steps)] = math.inf
-    curr = (0,0,0,0) # r, c, direction, count
+    curr = (0,0,1,0) # r, c, direction, count
     dist[curr] = 0
 
     targets = {}
