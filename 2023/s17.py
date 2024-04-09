@@ -54,12 +54,12 @@ def neighbors(pos, rows, cols):
 
 # dijkstra's
 def find():
-    unvisited = set()
+    unvisited = {}
     for c in range(cols):
         for r in range(rows):
             for d in range(4):
                 for steps in range(3):
-                    unvisited.add((r,c,d,steps)) # r, c, direction, count
+                    unvisited[(r,c,d,steps)] = math.inf # r, c, direction, count
 
     dist = {}
     for c in range(cols):
@@ -70,24 +70,35 @@ def find():
     curr = (0,0,0,0) # r, c, direction, count
     dist[curr] = 0
 
+    targets = {}
+
     while True:
         # process neighbors
         for ne in neighbors(curr, rows, cols):
             if ne in unvisited:
                 dist[ne] = min(dist[ne], dist[curr] + mp[ne[0]][ne[1]])
-        unvisited.remove(curr)
+                targets[ne] = dist[ne]
+        unvisited.pop(curr)
+        if curr in targets: targets.pop(curr)
         # find next curr (unvisited with smallest distance)
         if not unvisited:
             break
-        v = [(a,dist[a]) for a in unvisited]
-        v = sorted(v, key=lambda a: a[1])
-        if v[0][1] < math.inf:
-            curr = v[0][0]
+        v = [(a,dist[a]) for a in targets]
+        if not v:
+            break
+        v = min(v, key=lambda a: a[1])
+        if v[1] < math.inf:
+            curr = v[0]
         else:
             break
     return dist
 
+import time
+
+start = time.time()
 dist = find()
+end = time.time()
+print(f'elapsed time: {(end-start)*1000:.2f} ms')
 
 out = []
 for k,v in dist.items():
