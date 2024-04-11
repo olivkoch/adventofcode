@@ -46,7 +46,7 @@ def build_map(ins):
     return out
 
 
-def map_to_jpg(mp, filename, scale=2.0):
+def map_to_jpg(mp, filename, scale=1.0):
     rows, cols = len(mp), len(mp[0])
     arr = np.zeros((rows, cols), dtype=np.int32)
     for r,line in enumerate(mp):
@@ -105,19 +105,21 @@ ins = read_instructions(sys.argv[1])
 
 mp = build_map(ins)
 
-print_map(mp)
-
-map_to_jpg(mp, 'mp.jpg')
+map_to_jpg(mp, 'mp.jpg', scale=1.0)
 
 rows, cols = len(mp), len(mp[0])
 
 ans = sum([x == '#' for line in mp for x in line])
+iter = 0
 while True:
     p = find_interior_point(mp)
     print(f'new interior point {p}')
     if not p:
         break
+    map_to_jpg(mp, f'mp-{iter}-before.jpg', scale=2.0)
     ans += flood_fill(mp, p, rows, cols)
-    print_map(mp)
+    map_to_jpg(mp, f'mp-{iter}-after.jpg', scale=2.0)
+    iter += 1
+    break
 
 print(ans)
