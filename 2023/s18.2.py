@@ -90,11 +90,11 @@ def merge_pairs (p1, p2):
         return [[r21, r12, c2]], s
     if r11 == r21:
         assert(r22 < r12)
-        return [[r22, r12, c2]], s
+        return [[r22, r12, c2]], s + r22 - r21 - 1
     if r12 == r22:
         assert(r11 < r21)
-        return [[r11, r21, c2]], s
-    return [[r11,r21, c2], [r22,r12, c2]], s
+        return [[r11, r21, c2]], s + r22 - r21 - 1
+    return [[r11,r21, c2], [r22,r12, c2]], s + r22 - r21 # splitting an edge
 
 def sanity_check_pairs(pairs):
     for p in pairs:
