@@ -25,14 +25,17 @@ def instructions_to_vertices(ins):
         s = x[1]
         count += s
         if d == 'R':
-            z[0] += s
-        if d == 'L':
-            z[0] -= s
-        if d == 'U':
-            z[1] -= s
-        if d == 'D':
             z[1] += s
+        if d == 'L':
+            z[1] -= s
+        if d == 'U':
+            z[0] -= s
+        if d == 'D':
+            z[0] += s
         ans.append(z)
+    m1 = min([x[0] for x in ans])
+    m2 = min([x[1] for x in ans])
+    ans = [[x[0]-m1, x[1]-m2] for x in ans]
     return ans[:-1], count
 
 def pair_overlaps (p1, p2):
@@ -48,11 +51,17 @@ def pair_overlaps (p1, p2):
 def vertices_to_pairs (verts):
     """ convert list of vertices to pairs of vertical lines """
     ans = []
+    s = verts[0]
     for v1, v2 in zip(verts, verts[1:]):
         if v1[1] == v2[1]:
             a = min(v1[0], v2[0])
             b = max(v1[0], v2[0])
             ans.append([a, b, v1[1]]) # r1, r2, c1==c2 (r1 < r2)
+    v1 = v2
+    v2 = s
+    a = min(v1[0], v2[0])
+    b = max(v1[0], v2[0])
+    ans.append([a, b, v1[1]])
     return ans
 
 def find_next_pair (p, pairs):
@@ -123,6 +132,83 @@ def sanity_check_pairs_advanced(pairs):
             return True
     return False
     
+def vertices_to_image(iverts, scale, filename):
+    verts = [[int(x[0]/scale), int(x[1]/scale)] for x in iverts]
+    rmin = min([p[0] for p in verts])
+    rmax = max([p[0] for p in verts])
+    cmin = min([p[1] for p in verts])
+    cmax = max([p[1] for p in verts])
+    irows = rmax - rmin + 1
+    icols = cmax - cmin + 1
+    arr = np.zeros((irows+1, icols+1), dtype=np.int32)
+    count = 0
+    for p1, p2 in zip(verts, verts[1:]):
+        count += 1
+        #if count > 7:
+        #    break
+        ir1 = p1[0] - rmin
+        ic1 = p1[1] - cmin
+        ir2 = p2[0] - rmin
+        ic2 = p2[1] - cmin
+        if ir1 == ir2:
+            arr[ir1, ic1:ic2] = 255
+            arr[ir1, ic2:ic1] = 255
+        elif ic1 == ic2:
+            arr[ir1:ir2, ic1] = 255
+            arr[ir2:ir1, ic1] = 255
+        else:
+            print(p1, p2)
+    im = Image.fromarray(arr).convert('RGB')
+    im.save(filename)
+
+def pairs_to_image(ipairs, scale, filename):
+    pairs = [[int(u/scale) for u in p] for p in ipairs]
+    rmin = min([p[0] for p in pairs] + [p[1] for p in pairs])
+    rmax = max([p[0] for p in pairs] + [p[1] for p in pairs])
+    cmin = min([p[2] for p in pairs])
+    cmax = max([p[2] for p in pairs])
+    irows = rmax - rmin + 1
+    icols = cmax - cmin + 1
+    arr = np.zeros((irows+1, icols+1), dtype=np.int32)
+    for i,p1 in enumerate(pairs):
+        for p2 in pairs[i+1:]:
+            if pair_overlaps(p1, p2):
+                ir11 = p1[0] - rmin
+                ir12 = p1[1] - rmin
+                ic1 = p1[2] - cmin
+                ir21 = p2[0] - rmin
+                ir22 = p2[1] - rmin
+                ic2 = p2[2] - cmin
+                assert(ir22 < irows)
+                print(ic2, icols)
+                assert(ic2 < icols)
+                arr[ir11:ir12, ic1] = 255
+                print(ir21, ir22, ic2, irows, icols)
+                arr[ir21:ir22, ic2] = 255
+                if ir11 == ir21 and ir12 == ir22:
+                    arr[ir11, ic1:ic2] = 255
+                    arr[ir12, ic1:ic2] = 255
+                elif ir21 == ir12:
+                    arr[ir21, ic1:ic2] = 255
+                elif ir11 == ir22:
+                    arr[ir11, ic1:ic2] = 255
+                elif ir11 == ir21:
+                    arr[ir11, ic1:ic2] = 255
+                elif ir12 == ir22:
+                    arr[ir12, ic1:ic2] = 255
+                break
+    im = Image.fromarray(arr).convert('RGB')
+    im.save(filename)
+
+    # for r,line in enumerate(mp):
+    #     for c,u in enumerate(line):
+    #         if u == '#':
+    #             arr[r][c] = 255
+    # im = Image.fromarray(arr).convert('RGB')
+    # im = im.resize((int(cols*scale), int(rows*scale)), Image.Resampling.LANCZOS)
+    # im.save(filename)
+
+
 def merge_all_pairs (pairs):
     """ assume pairs are sorted """
     k = 0
@@ -161,20 +247,21 @@ ins = read_instructions(sys.argv[1])
 
 verts, count = instructions_to_vertices(ins)
 
+print(verts)
+
 pairs = vertices_to_pairs (verts)
-    
+
 # sort pairs by incrasing cols
 pairs = list(sorted(pairs, key=lambda u:u[2]))
+
+print(pairs)
 
 assert(sanity_check_pairs(pairs))
 assert(sanity_check_pairs_advanced(pairs))
 
-#for i,p in enumerate(pairs):
-    #if p[0] == 2319762:
-#    print(i, p)
 ans = merge_all_pairs (pairs)
-#print(test())
-#ans += count
-
 print(ans)
 print(952408144115 - ans)
+
+#pairs_to_image(pairs, 1000, 'pairs.png')
+#vertices_to_image(verts, 1000, 'verts.png')
