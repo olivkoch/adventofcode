@@ -126,8 +126,8 @@ def rules_to_nodes (rules):
         for r in rule[0]:
             cond = r.split(':')[0]
             outcome = r.split(':')[1]
+            c = Node(key=outcome, conds=' and '.join([not_cond(x) for x in conditions] + [cond]), parent=node)
             conditions.append(cond)
-            c = Node(key=outcome, conds=cond, parent=node)
             node.children.append(c)
             stack.append(c)
         d = Node(key=rule[1], conds=' and '.join([not_cond(x) for x in conditions]), parent=node)
@@ -148,6 +148,7 @@ def print_node (node):
 leafs = []
 
 def leaf_nodes (node):
+    """ list the leaf nodes in the graph (i.e. those ending with an Accept) """
     if node.key == 'A':
         leafs.append(node)
     for c in node.children:
@@ -173,6 +174,7 @@ def new_range_with_min (range, mn):
     return [max(range[0], mn+1), range[1]]
 
 def conds_to_ranges (conds):
+    """ convert conditions as strings into ranges of ints """
     vars = ['x', 'm', 'a', 's']
     MAXV = 4000
     ans = [[1,MAXV], [1,MAXV], [1,MAXV], [1,MAXV]]
@@ -239,7 +241,6 @@ def solve (rset):
     for i in range(n-1):
         for j in range(i+1, n):
             x = intersect_ranges(rset[i], rset[j])
-            #print(f'surface of intersect: {range_surface(x):_}')# \t\t\tfor {rset[i]}\t\t{rset[j]}\t\t{x}')
             ans -= range_surface(x)
     return ans
                 
@@ -253,28 +254,11 @@ range_set = []
 
 for a in leafs:
     path, conds = backtrack_node(a)
-    print(' -- '.join([str(a) for a in path]))
-    print(conds)
     conds = conds[:-1]
     conds = list(map(lambda a: preprocess_cond(a), split_conds(conds)))
-    print(conds)
     ranges = conds_to_ranges(conds)
-    print(ranges)
-    print()
     if are_valid_ranges(ranges):
         range_set.append(ranges)
 
-print(range_set)
-
-#a = conds_to_ranges(['x<1416', 'a<2006', 's<1351'])
-#print(a)
-
-#a = list(map(lambda a: preprocess_cond(a), split_conds(['s<=537 and x<=2440', 'a<=2006 and m<=2090', 's<1351'])))
-#print(a)
-#print()
-#a = intersect_ranges([[1, 4000], [1, 4000], [230, 2005], [230, 2005]], [[1415, 1730], [100, 838], [250, 2010], [120, 2300]])
-#print(a)
-
-#range_set = [[[1, 1415], [1, 4000], [1, 2005], [1, 1350]], [[2663, 4000], [1, 4000], [1, 2005], [1, 1350]]]
 a = solve (range_set)
 print(f'{a:_}') # expected 167409079868000
