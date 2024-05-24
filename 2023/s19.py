@@ -1,5 +1,6 @@
 import re
 import sys
+import copy
 
 def parse_part (line):
     d = re.match(r'{x=(\d+),m=(\d+),a=(\d+),s=(\d+)}', line)
@@ -113,6 +114,7 @@ def not_cond (cond):
     return cond.replace('<', '>=')
 
 def rules_to_nodes (rules):
+    """ convert rules into a graph and return the head (in) """
     head = Node('in')
     stack = [head]
     while stack:
@@ -163,16 +165,17 @@ def backtrack_node (node):
 def new_range_with_max (range, mx):
     if mx < range[0]:
         return [0, -1]
-    return [min(range[0], mx-1), min(range[1], mx-1)]
+    return [range[0], min(range[1], mx-1)]
         
 def new_range_with_min (range, mn):
     if mn > range[1]:
         return [0, -1]
-    return [max(range[0], mn+1), max(range[1], mn+1)]
+    return [max(range[0], mn+1), range[1]]
 
 def conds_to_ranges (conds):
     vars = ['x', 'm', 'a', 's']
-    ans = [[1,4000], [1,4000], [1,4000], [1,4000]]
+    MAXV = 4000
+    ans = [[1,MAXV], [1,MAXV], [1,MAXV], [1,MAXV]]
     for cond in conds:
         g = re.match(r'(\w)<(\d+)', cond)
         if g:
@@ -213,9 +216,9 @@ def preprocess_cond (cond):
         r = int(g.group(2))
         return f'{v}>{r-1}'
     return cond
-    
+
 def intersect_ranges (c1, c2):
-    ans = c1
+    ans = copy.deepcopy(c1)
     for k in range(4):
         ans[k] = new_range_with_min(ans[k], c2[k][0]-1)
         ans[k] = new_range_with_max(ans[k], c2[k][1]+1)
@@ -227,14 +230,16 @@ def range_surface (r):
     ans = 1
     for k in range(4):
         ans *= r[k][1] - r[k][0] + 1
+    assert(ans > 0)
     return ans
 
-def solve (range_set):
-    ans = sum([range_surface(x) for x in range_set])
-    n = len(range_set)
-    for i in range(n):
+def solve (rset):
+    ans = sum([range_surface(x) for x in rset])
+    n = len(rset)
+    for i in range(n-1):
         for j in range(i+1, n):
-            x = intersect_ranges(range_set[i], range_set[j])
+            x = intersect_ranges(rset[i], rset[j])
+            #print(f'surface of intersect: {range_surface(x):_}')# \t\t\tfor {rset[i]}\t\t{rset[j]}\t\t{x}')
             ans -= range_surface(x)
     return ans
                 
@@ -266,8 +271,10 @@ print(range_set)
 
 #a = list(map(lambda a: preprocess_cond(a), split_conds(['s<=537 and x<=2440', 'a<=2006 and m<=2090', 's<1351'])))
 #print(a)
-a = intersect_ranges([[1, 1415], [1, 4000], [1, 2005], [1, 1350]], [[1415, 4000], [1, 838], [1, 1716], [1, 1351]])
-print(a)
+#print()
+#a = intersect_ranges([[1, 4000], [1, 4000], [230, 2005], [230, 2005]], [[1415, 1730], [100, 838], [250, 2010], [120, 2300]])
+#print(a)
 
+#range_set = [[[1, 1415], [1, 4000], [1, 2005], [1, 1350]], [[2663, 4000], [1, 4000], [1, 2005], [1, 1350]]]
 a = solve (range_set)
-print(a)
+print(f'{a:_}') # expected 167409079868000
