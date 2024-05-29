@@ -3,6 +3,7 @@ from PIL import Image
 import numpy as np
 import random
 import copy
+import math
 
 def map_to_jpg(mp, filename, scale=1.0):
     rows, cols = len(mp), len(mp[0])
@@ -19,9 +20,8 @@ def map_to_jpg(mp, filename, scale=1.0):
     im.save(filename)
 
 
-# for steps in [64, 64+53, 128, 128+53, 192, 192+53, 256, 256+53, 320, 320+53]:
-for steps in [7]:
-# for steps in [6, 10, 50, 100, 500]:
+# compute number of reachable spots for a given number of steps
+for steps in [65]:
 
     filename = sys.argv[1]
 
@@ -42,7 +42,7 @@ for steps in [7]:
                 pos = [r,c]
 
     # replicate the map
-    factor = 11
+    factor = 3
     rowsx = factor * rows
     colsx = factor * cols
     mpx = [[0 for _ in range(colsx)] for _ in range(rowsx)]
@@ -89,33 +89,13 @@ for steps in [7]:
 
     map_to_jpg (mp, f'png/map-21-{steps}.png', scale=1)
 
-
-    # In exactly 6 steps, he can still reach 16 garden plots.
-    # In exactly 10 steps, he can reach any of 50 garden plots.
-    # In exactly 50 steps, he can reach 1594 garden plots.
-    # In exactly 100 steps, he can reach 6536 garden plots.
-    # In exactly 500 steps, he can reach 167004 garden plots.
-    # In exactly 1000 steps, he can reach 668697 garden plots.
-    # In exactly 5000 steps, he can reach 16733044 garden plots.
-
-
-#map_to_jpg (mp, f'map-21.png', scale=5)
-
-# 26,501,365 = 414,083 x 64 + 53
-# 26,501,365 = 414,083 x 65 + 19
-
-#r0 = int(rows/2) + 1
-#c0 = int(cols/2) + 3
-#print(mp[r0][c0] == 2)
-
-
+# fine-tuning the final solution accounting for offset
 n = 404601
 q = n**2
 x1 = round(q/2)
 x2 = x1 + 1
-z = x2 * 3797 + x1 * 3756
-eps = (n-1) * 20 * (n-3)/2
-ans = z - eps
-print(f'{n=},{x1=}, {x2=}, {z=}, {eps=}, {ans=}')
-
-# leading to ans = 616583483179597
+z = x2 * 3797 + x1 * 3716
+x3 = math.ceil(n/2)
+eps = (x3 * (x3 + 1) / 2 - 1 ) * 80 
+ans = z + eps
+print(f'{n=},{x1=}, {x2=}, {x3=}, {z=}, {eps=}, {ans=}')
