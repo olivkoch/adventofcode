@@ -32,8 +32,6 @@ def build_map (bricks):
         
 def drop_bricks (bricks, rmp):
     """ rmp maps a brick id to all brick ids that sit under it """
-    # sort bricks by min height
-    bricks = sorted(bricks, key = lambda u: min(u[0][2], u[1][2]))
     for i in range(len(bricks)):
         b = bricks[i]
         s = b[0]
@@ -42,19 +40,46 @@ def drop_bricks (bricks, rmp):
         cds = [max(bricks[j][0][2], bricks[j][1][2]) for j in rmp[i]]
         h = max(cds) + 1 if cds else 1
         d = min(s[2], e[2])
-        print (f'brick {i} {s=} {e=} will drop to height {h=} and has supports {rmp[i]}')
+        # print (f'brick {i} {s=} {e=} will drop to height {h=} and has supports {rmp[i]}')
         assert (d >= h)
         dz = d - h
         bricks[i][0][2] -= dz
         bricks[i][1][2] -= dz
 
+def bricks_can_destroy(bricks, rmp):
+    """ rmp maps a brick id to all brick ids that sit under it """
+    # build reverse dict (maps a brick id to bricks sitting on top of it)
+    # mp = defaultdict(set)
+    # for k, v in rmp.items():
+    #     bk = bricks[k]
+    #     bkh = min(bk[0][2], bk[1][2])
+    #     for u in v:
+    #         bu = bricks[u]
+    #         buh = max(bu[0][2], bu[1][2])
+    #         if bkh == buh + 1:
+    #             mp[u].add(k)
+    ans = set()
+    for k, v in rmp.items():
+        bk = bricks[k]
+        bkh = min(bk[0][2], bk[1][2])
+        bv = list(filter (lambda u: max(bricks[u][0][2], bricks[u][1][2]) == bkh - 1, v))
+        if len(bv) == 1:
+            # Brick {k} sits on just brick {bv[0]}
+            ans.add(bv[0])
+    return len(bricks) - len(ans)
 
 bricks = []
 for line in data:
     a, b = read_bricks(line)
     bricks.append([a, b])
+# sort bricks by min height
+    bricks = sorted(bricks, key = lambda u: min(u[0][2], u[1][2]))
 
 rmp = build_map (bricks)
-print (rmp)
+# print (rmp)
 
 drop_bricks (bricks, rmp)
+
+ans = bricks_can_destroy (bricks, rmp)
+
+print(ans)
