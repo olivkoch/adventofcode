@@ -118,4 +118,4 @@ eps = (n-1) * 20 * (n-3)/2
 ans = z - eps
 print(f'{n=},{x1=}, {x2=}, {z=}, {eps=}, {ans=}')
 
-# leading to ans=616583483179597
+# leading to ans = 616583483179597
