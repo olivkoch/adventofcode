@@ -49,6 +49,10 @@ class Node:
         self.c = c
         self.neigh = [] # a list of Node
         self.m_neigh = [] # marked neighbors during graph building
+        self.dist = 0 # max distance from source
+        self.edges = [] # a list of Edge
+        self.name = f'({self.r}, {self.c})'
+        self.targets = [] # neighbors in part 2's network
 
     def __str__ (self):
         ns = ','.join([f'({n.r}, {n.c})' for n in self.neigh])
@@ -80,19 +84,21 @@ class Path:
     def __str__ (self):
         return ' -> '.join ([f'({n.r}, {n.c})' for n in self.nodes])
 
-# class Vertex:
-#     def __init__(self, node):
-#         self.node = node
-#         self.edges = []
-
-#     def __str__ (self):
-#         return str(self.node)
-
 class Edge:
     def __init__(self, a, b, len):
-        self.a = a
-        self.b = b
+        self.a = a # a Node
+        self.b = b # a Node
         self.len = len
+        self.visited = False
+
+    def __str__ (self):
+        return f'E -- {str(self.a)} -- {str(self.b)}'
+    
+    def other (self, c):
+        return self.b if c == self.a else self.a
+    
+    # def __eq__ (self, other):
+    #     return (self.a == other.a and self.b == other.b) or (self.a == other.b) and (self.b == other.a)
 
 def copy_path (p):
     s = Path(p.nodes[0])
@@ -152,12 +158,9 @@ def find_all_paths (nodes, sta, end):
                     pth.is_alive = False
         paths += new_paths
         paths = list(filter(lambda u: u.is_alive, paths))
-        # print(f' ******** paths {len(paths)} ************')
-        # for pth in paths:
-        #     print(pth)
     return paths
 
-def find_longest_path (nodes, sta, end):
+def find_longest_path_brute_force (nodes, sta, end):
 
     paths = find_all_paths (nodes, sta, end)
 
@@ -186,7 +189,7 @@ def build_graph (nodes, sta, end):
     # find intersections
     its = list(filter(lambda n: len(nodes[n].neigh) > 2, nodes.keys())) + [sta, end]
     its = list(map (lambda u : nodes[u], its))
-
+    print(f'{len(its)} intersections')
     V = set()
     E = set()
     # follow all unseen paths between intersections
@@ -212,14 +215,56 @@ def build_graph (nodes, sta, end):
         v1 = pth[0]  
         v2 = pth[-1] 
         ed = Edge(v1, v2, len(pth) - 1)
+        v1.targets.append(v2)
+        v2.targets.append(v1)
         if not v1 in V:
             V.add(v1)
         if not v2 in V:
             V.add(v2)
         E.add(ed)
+        v1.edges.append(ed)
+        v2.edges.append(ed)
     print(f'{len(V)} vertices, {len(E)} edges')
     return V, E
 
+import random
+from collections import defaultdict
+
+def find_one_path (V, E, nodes, sta, end):
+    tov = defaultdict(set) # list of edges pointing to a given node
+    for e in E:
+        e.visited = False
+        tov[e.a].add(e)
+        tov[e.b].add(e)
+    prev = None
+    curr = nodes[sta]
+    failed = False
+    len = 0
+    while curr != nodes[end]:
+         # forbid return to prev
+        if prev:
+            for u in tov[prev]:
+                u.visited = True
+        # pick next node
+        eds = list(filter(lambda u: not u.visited, curr.edges))
+        if not eds:
+            failed = True
+            break
+        edo = random.choice(eds)
+        prev = curr
+        curr = edo.other(curr)
+        len += edo.len
+#    print(f'{failed=}, {len=}')
+    return failed, len
+
+def find_longest_path (V, E, nodes, sta, end):
+    max_len = 0
+    while True:
+        failed, len = find_one_path(V, E, nodes, sta, end)
+        if not failed and len > max_len:
+            print(max_len)
+            max_len = len
+    print(max_len)
 
 # main 
 
@@ -232,6 +277,12 @@ nodes = array_to_nodes (arr)
 
 degree = sum([len(n.neigh) for n in nodes.values()])/len(nodes)
 
+# part 1: brute force
+# pth = find_longest_path_brute_force (nodes, sta, end)
+# print (f'longest path: {len(pth.nodes)}')
+
+# part 2: build a graph with intersections as vertices 
+# then search for longest path in the graph
 V, E = build_graph (nodes, sta, end)
 
 its = list(filter(lambda n: len(nodes[n].neigh) > 2, nodes.keys())) + [sta, end]
@@ -239,3 +290,48 @@ for n in its:
     arr[n[0]][n[1]] = 7
 
 arr_to_png (arr, f'day-23-{len(arr)}.png')
+
+find_longest_path (V, E, nodes, sta, end)
+
+
+# code to display a network - do not modify this cell
+
+from graphviz import Digraph
+def trace(root, _nodes):
+    nodes, edges = set(), set()
+    def build(v):
+        if v not in nodes:
+            nodes.add(v)
+            for child in v.targets:
+                edges.add((v, child))
+                build(child)
+            #else:
+            #    print(f'warning: {child} not found in _nodes')
+                #dummy = Dummy(child_name)
+                #edges.add((v, dummy))
+                #build(dummy)
+    build(root)
+    return nodes, edges
+
+def draw_dot(root, _nodes, format='svg', rankdir='LR'):
+    """
+    format: png | svg | ...
+    rankdir: TB (top to bottom graph) | LR (left to right)
+    """
+    assert rankdir in ['LR', 'TB']
+    nodes, edges = trace(root, _nodes)
+    dot = Digraph(format=format, graph_attr={'rankdir': rankdir}) #, node_attr={'rankdir': 'TB'})
+    
+    layer_colors = ["#FFCCCC", "#CCFFCC", "#CCCCFF", "#FFCC99", "#99CCFF"]
+    
+    for n in nodes:
+        color = layer_colors[0]# if type(n).__name__ == "Conjunction" else layer_colors[1]
+        dot.node(name=str(id(n.name)), label="{ %s }" % (n.name), shape='record', style='filled', color=color)
+    
+    for n1, n2 in edges:
+        dot.edge(str(id(n1.name)), str(id(n2.name)))
+    
+    return dot
+
+g = draw_dot(nodes[sta], nodes)
+g.render('file', format='png')
