@@ -89,6 +89,5 @@ Ainv = np.linalg.inv(A)
 C = np.matmul(Ainv, B)
 ans = C[0] + C[1] + C[2]
 print(ans)
-
 # solution to part 2: 652666650475950
 
