@@ -1,6 +1,5 @@
 import sys
 import re
-import copy
 
 input_file = sys.argv[1]
 
@@ -60,15 +59,6 @@ for rounds in [10000]:
     mod = 1
     for m in monkeys:
         mod *= m.mod
-    # for i, m in enumerate(monkeys):
-    #     if i == 0:
-    #         m.keep_item(0)
-    #     else:
-    #         m.clear_items()
-
-    # for m in monkeys:
-    #      print(m)
-    # print()
 
     # run rounds
     ans = []
@@ -81,16 +71,6 @@ for rounds in [10000]:
                 else:
                     monkeys[m.exit2].items.append(x)
                 m.inspected += 1
-        # for m in monkeys:
-        #     print(m)
-        # print()
-        # x = [len(m.items) for m in monkeys]
-        # z = x.index(1)
-        # ans.append(z)
-        #if monkeys[0].items and monkeys[0].items[0] * 3 % 7 == 0:
-        #    print (f'mod 7 found at round {round}')
-    # ins = sorted ([m.inspected for m in monkeys], reverse=True)
-    # out = ins[0] * ins[1]
-#    print(ans)
+
     print([m.inspected for m in monkeys])
     
