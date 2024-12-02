@@ -1,5 +1,5 @@
 import sys
-import re
+import copy
 
 input_file = sys.argv[1]
 
@@ -38,6 +38,7 @@ for i, line in enumerate(lines):
         endg[1] = line.index('E')
         break
 mp[endg[0]][endg[1]] = 'z'
+print(f'{endg=}')
 
 def neighbors (p, rows, cols):
     ans = [[p[0]-1, p[1]], [p[0]+1, p[1]], [p[0], p[1]-1], [p[0], p[1]+1]]
@@ -47,23 +48,32 @@ def neighbors (p, rows, cols):
 def valid_move (mp, p, q):
     return ord(mp[q[0]][q[1]]) <= ord(mp[p[0]][p[1]]) + 1
 
-# shortest path from a to z
-visited = set()
-curr = start
-stopc = 'z'
-ans = 0
-queue = [(curr,0)]
-while queue:
-    p, d = queue.pop(0)
-    for r in neighbors(p, rows, cols):
-        if valid_move(mp, p, r):
-            rt = tuple(r)
-            if not rt in visited:
-                queue.append((r, d+1))
-                visited.add(rt)
-    if mp[p[0]][p[1]] == stopc:
-        print(f'stopping at {p} with depth {d} for target {stopc}')
-        stop = [p[0], p[1]]
-        ans += d
-        break
-print(ans)
+
+sol = []
+for sr in range(rows):
+    for sc in range(cols):
+        if mp[sr][sc] != 'a':
+            continue
+        start = [sr,sc]
+        # shortest path from a to z
+        visited = set()
+        curr = copy.deepcopy(start)
+        stopc = 'z'
+        ans = 0
+        queue = [(curr,0)]
+        while queue:
+            p, d = queue.pop(0)
+            for r in neighbors(p, rows, cols):
+                if valid_move(mp, p, r):
+                    rt = tuple(r)
+                    if not rt in visited:
+                        queue.append((r, d+1))
+                        visited.add(rt)
+            if mp[p[0]][p[1]] == stopc:
+                # print(f'stopping at {p} with depth {d} for target {stopc}')
+                stop = [p[0], p[1]]
+                ans += d
+                break
+        sol.append((ans, (sr, sc)))
+sol = list(filter(lambda u:u[0]>0, sol))
+print(min(sol, key=lambda u: u[0]))
